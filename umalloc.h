@@ -11,12 +11,14 @@
  * bits 1-3 are unused.
  * and the remaining 60 bit represent the size.
  */
-typedef struct memory_block_struct {
-    size_t block_size_alloc;
-    struct memory_block_struct *next;
+typedef struct memory_block_struct { // this is header
+    size_t block_size_alloc; 
+    struct memory_block_struct *next; // 8 bytes
+    // magic can use next pointer
 } memory_block_t;
 
 // Helper Functions, this may be editted if you change the signature in umalloc.c
+// ***change these is you change memory_block_struct
 bool is_allocated(memory_block_t *block);
 void allocate(memory_block_t *block);
 void deallocate(memory_block_t *block);
