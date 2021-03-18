@@ -197,7 +197,7 @@ int uinit() {
  * umalloc -  allocates size bytes and returns a pointer to the allocated memory.
  */
 void *umalloc(size_t size) {
-    memory_block_t *fitted_block = find(size + sizeof(memory_block_t));
+    memory_block_t *fitted_block = find(size + sizeof(memory_block_t)); //
     if (fitted_block == NULL){ // didn't find a block with enough space
         // call csbrk to make more
         memory_block_t *more_free = csbrk(PAGESIZE * 16);
