@@ -18,7 +18,6 @@ typedef struct memory_block_struct { // this is header
 } memory_block_t;
 
 // Helper Functions, this may be editted if you change the signature in umalloc.c
-// ***change these is you change memory_block_struct
 bool is_allocated(memory_block_t *block);
 void allocate(memory_block_t *block);
 void deallocate(memory_block_t *block);
@@ -27,6 +26,9 @@ memory_block_t *get_next(memory_block_t *block);
 void put_block(memory_block_t *block, size_t size, bool alloc);
 void *get_payload(memory_block_t *block);
 memory_block_t *get_block(void *payload);
+// new
+void print_heap();
+memory_block_t *split_new(memory_block_t *block, size_t size, size_t old_size);
 
 memory_block_t *find(size_t size);
 memory_block_t *extend(size_t size);
