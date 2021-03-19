@@ -28,13 +28,15 @@ void *get_payload(memory_block_t *block);
 memory_block_t *get_block(void *payload);
 // new
 void print_heap();
-memory_block_t *split_new(memory_block_t *block, size_t size, size_t old_size);
+memory_block_t *split_new(memory_block_t *new, memory_block_t *old, size_t old_size);
+void add_to_heap(memory_block_t *block);
+void coalesce(memory_block_t *lead, memory_block_t *trailer, 
+                    size_t lead_end, size_t trailer_begin);
+
 
 memory_block_t *find(size_t size);
 memory_block_t *extend(size_t size);
 memory_block_t *split(memory_block_t *block, size_t size);
-memory_block_t *coalesce(memory_block_t *block);
-
 
 // Portion that may not be edited
 int uinit();
