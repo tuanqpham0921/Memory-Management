@@ -263,10 +263,10 @@ void *umalloc(size_t size) {
         coalesce(last_node, left_over, last_node_end, (size_t) left_over);
         left_over->next = NULL;
     }
-    printf("***%s at %p, size %d, end address %p\n",
-                (is_allocated(fitted_block))?"alllocated":"free",
-                fitted_block,
-                (int) get_size(fitted_block), fitted_block->next);  
+    // printf("***%s at %p, size %d, end address %p\n",
+    //             (is_allocated(fitted_block))?"alllocated":"free",
+    //             fitted_block,
+    //             (int) get_size(fitted_block), fitted_block->next);  
     return fitted_block + 1;
 }
 
