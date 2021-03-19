@@ -160,6 +160,7 @@ memory_block_t *split_new(memory_block_t *taken, memory_block_t *space, size_t o
 
 /*
  * check if need to coalese between two nodes
+ * this take in two inputs and combine the nodes
  */
 void coalesce(memory_block_t *lead, memory_block_t *trailer, 
                     size_t lead_end, size_t trailer_begin){
@@ -214,7 +215,7 @@ void add_to_heap(memory_block_t *block){
 } 
 
 /*
- * print list for debugging
+ * print list for debugging by going thru free_head
  */
 void print_heap() {
     memory_block_t *cur_node = free_head;
@@ -278,5 +279,4 @@ void ufree(void *ptr) {
     // memory_block_t *cur_node = ((memory_block_t *) ptr) - 1;
     // deallocate(cur_node);
     // add_to_heap(cur_node);
-    //print_heap();
 }
