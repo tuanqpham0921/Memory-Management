@@ -244,21 +244,19 @@ int uinit() {
  * umalloc -  allocates size bytes and returns a pointer to the allocated memory.
  */
 void *umalloc(size_t size) {
-    size += sizeof(memory_block_t); // needed size is + header
-    assert(size <= PAGESIZE * 16 - sizeof(memory_block_t)); // should be the max you can alcocate
+    int mod = size % ALIGNMENT;
+    if (mod != 0){
+        size += ALIGNMENT - mod;
+    }
+    size += sizeof(memory_block_t); // size we're finding must be % 16
     memory_block_t *fitted_block = find(size);
-    // bc if it did, fitted_block next should be the end address
-    // fitted block is the last node in the link list
     if (fitted_block->next == NULL){ // didn't find a block with enough space
         memory_block_t *last_node = fitted_block;
         size_t last_node_end = (size_t) last_node + sizeof(memory_block_t) + last_node->block_size_alloc;
         memory_block_t *more_space = csbrk(PAGESIZE * 16);
         more_space->block_size_alloc = PAGESIZE * 16 - sizeof(memory_block_t);
         more_space->next = NULL; 
-        // coalesce(last_node, more_space, last_node_end, (size_t) more_space);
-
-        fitted_block = split(more_space, size); // ****something is wrong here
-        allocate(fitted_block);
+        fitted_block = split(more_space, size);
         memory_block_t *left_over = split_new(fitted_block, more_space, PAGESIZE * 16 - sizeof(memory_block_t));
         coalesce(last_node, left_over, last_node_end, (size_t) left_over);
         left_over->next = NULL;
@@ -277,7 +275,8 @@ void *umalloc(size_t size) {
 void ufree(void *ptr) {
     // go back to the header
     // **** do you have to NULL out to prevent memory leaks???
-    memory_block_t *cur_node = ((memory_block_t *) ptr) - 1;
-    deallocate(cur_node);
-    add_to_heap(cur_node);
+    // memory_block_t *cur_node = ((memory_block_t *) ptr) - 1;
+    // deallocate(cur_node);
+    // add_to_heap(cur_node);
+    //print_heap();
 }
