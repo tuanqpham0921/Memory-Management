@@ -5,7 +5,7 @@
 #include <assert.h>
 
 const char author[] = ANSI_BOLD ANSI_COLOR_RED "Tuan Pham, tqp85" ANSI_RESET;
-
+intptr_t csbrk_call = (PAGESIZE * 12.5);
 /*
  * The following helpers can be used to interact with the memory_block_t
  * struct, they can be adjusted as necessary.
@@ -203,9 +203,9 @@ void add_to_heap(memory_block_t *block){
         }
         // case 3 (block is between cur and next node)
         if (cur_node < block && next_node > block){
-            // check 2nd and 3rd
+            // check 2nd and 3rd node
             coalesce(block, next_node, (size_t) block->next, (size_t) next_node);
-            // check 1st and 2nd
+            // check 1st and 2nd node
             coalesce(cur_node, block, (size_t) cur_node_end, (size_t) block);
             return;
         }
@@ -235,8 +235,8 @@ void print_heap() {
  * along with allocating initial memory.
  */
 int uinit() {
-    free_head = csbrk(PAGESIZE * 16); //*** intialize free_head to the max increment
-    free_head->block_size_alloc = PAGESIZE * 16 - sizeof(memory_block_t); // set size to  PAGESIZE
+    free_head = csbrk(csbrk_call); //*** intialize free_head to the max increment
+    free_head->block_size_alloc = csbrk_call - sizeof(memory_block_t); // set size to  PAGESIZE
     free_head->next = NULL; // next is pointing to NULL
     return 0;
 }
@@ -254,11 +254,11 @@ void *umalloc(size_t size) {
     if (fitted_block->next == NULL){ // didn't find a block with enough space
         memory_block_t *last_node = fitted_block;
         size_t last_node_end = (size_t) last_node + sizeof(memory_block_t) + last_node->block_size_alloc;
-        memory_block_t *more_space = csbrk(PAGESIZE * 16);
-        more_space->block_size_alloc = PAGESIZE * 16 - sizeof(memory_block_t);
+        memory_block_t *more_space = csbrk(csbrk_call);
+        more_space->block_size_alloc = csbrk_call - sizeof(memory_block_t);
         more_space->next = NULL; 
         fitted_block = split(more_space, size);
-        memory_block_t *left_over = split_new(fitted_block, more_space, PAGESIZE * 16 - sizeof(memory_block_t));
+        memory_block_t *left_over = split_new(fitted_block, more_space, csbrk_call - sizeof(memory_block_t));
         coalesce(last_node, left_over, last_node_end, (size_t) left_over);
         left_over->next = NULL;
     }
