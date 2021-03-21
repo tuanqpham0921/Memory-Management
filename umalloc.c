@@ -211,7 +211,7 @@ void *umalloc(size_t size) {
     memory_block_t *fitted_block = find(size);
     if (fitted_block->next == NULL){ // didn't find a block with enough space
         memory_block_t *last_node = fitted_block;
-        intptr_t new_size = size * 5;
+        intptr_t new_size = size * 15;
         if (new_size >= PAGESIZE * 16) // if call size is too big
             new_size = PAGESIZE * 16;
         memory_block_t *more_space = csbrk(new_size);
