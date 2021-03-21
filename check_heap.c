@@ -50,7 +50,7 @@ int check_heap() {
     }
 
     // 4. are all block aligned and payload is aligned correctly
-    // should be a divisiable by 16 for header and payload should be size
+    // should be a divisiable by 16 for header 
     cur_node = free_head;
     while (cur_node != NULL){
         // cast curnode to be safe
@@ -60,7 +60,7 @@ int check_heap() {
         }
         cur_node = cur_node->next;
     }
-
+    // everything looks good
     return 0;
 }
 

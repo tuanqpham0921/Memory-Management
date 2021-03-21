@@ -52,43 +52,6 @@ size_t get_size(memory_block_t *block) {
 }
 
 /*
- * get_next - gets the next block.
- */
-memory_block_t *get_next(memory_block_t *block) {
-    assert(block != NULL);
-    return block->next;
-}
-
-/*
- * put_block - puts a block struct into memory at the specified address.
- * Initializes the size and allocated fields, along with NUlling out the next 
- * field.
- */
-void put_block(memory_block_t *block, size_t size, bool alloc) {
-    assert(block != NULL);
-    assert(size % ALIGNMENT == 0);
-    assert(alloc >> 1 == 0);
-    block->block_size_alloc = size | alloc;
-    block->next = NULL;
-}
-
-/*
- * get_payload - gets the payload of the block.
- */
-void *get_payload(memory_block_t *block) {
-    assert(block != NULL);
-    return (void*)(block + 1);
-}
-
-/*
- * get_block - given a payload, returns the block.
- */
-memory_block_t *get_block(void *payload) {
-    assert(payload != NULL);
-    return ((memory_block_t *)payload) - 1;
-}
-
-/*
  * The following are helper functions that can be implemented to assist in your
  * design, but they are not required. 
  */
@@ -106,9 +69,10 @@ memory_block_t *find(size_t size) {
         if (cur_node->block_size_alloc >= size){
             size_t old_size = cur_node->block_size_alloc;
             memory_block_t *cur_node_next = cur_node->next;
+            // split to two new parts
             memory_block_t *ret = split(cur_node, size);
-            memory_block_t *new_node = split_new(ret, cur_node, old_size, cur_node_next);
-            // ****work on case for perfect fit cases
+            memory_block_t *new_node = split_new(ret, cur_node, 
+                                            old_size, cur_node_next);
             if(prev_node != NULL){
                 prev_node->next = new_node;
             }
@@ -120,15 +84,8 @@ memory_block_t *find(size_t size) {
         prev_node = cur_node;
         cur_node = cur_node->next;
     }
-    // never found one
+    // never found one return the last one in list
     return prev_node;
-}
-
-/*
- * extend - extends the heap if more memory is required.
- */
-memory_block_t *extend(size_t size) {
-    return NULL;
 }
 
 /*
@@ -151,8 +108,8 @@ memory_block_t *split(memory_block_t *block, size_t size) {
 /*
  * split - return the left over portion back
  */
-memory_block_t *split_new(memory_block_t *taken, memory_block_t *space, size_t old_size, 
-                                                                    memory_block_t *old_next) {
+memory_block_t *split_new(memory_block_t *taken, memory_block_t *space, 
+                                    size_t old_size,  memory_block_t *old_next) {
     int padding = (uintptr_t) taken - (uintptr_t) space;
     memory_block_t *ret = (memory_block_t *) ((char *) space + padding + 
                 sizeof(memory_block_t) + get_size(taken));
@@ -162,7 +119,7 @@ memory_block_t *split_new(memory_block_t *taken, memory_block_t *space, size_t o
 }
 
 /*
- * check if need to coalese between two nodes
+ * check if need to coalese between two nodes (lead and trailer)
  * this take in two inputs and combine the nodes
  */
 void coalesce(memory_block_t *lead, memory_block_t *trailer, 
@@ -191,7 +148,7 @@ void add_to_heap(memory_block_t *block){
     if (cur_node > block){
         coalesce(block, cur_node, 
                 (size_t) block->next, (size_t) cur_node);
-        free_head = block;
+        free_head = block; // now new block is free_head
         return;
     }
     
@@ -218,7 +175,7 @@ void add_to_heap(memory_block_t *block){
 } 
 
 /*
- * print list for debugging by going thru free_head
+ * print list for debugging by going over free_head
  */
 void print_heap() {
     memory_block_t *cur_node = free_head;
@@ -231,15 +188,14 @@ void print_heap() {
     }
 }
 
-
-
 /*
  * uinit - Used initialize metadata required to manage the heap
  * along with allocating initial memory.
  */
 int uinit() {
-    free_head = csbrk(csbrk_call); //*** intialize free_head to the max increment
-    free_head->block_size_alloc = csbrk_call - sizeof(memory_block_t); // set size to  PAGESIZE
+    free_head = csbrk(csbrk_call); //intialize free_head to the max increment
+    // set size to max at first
+    free_head->block_size_alloc = csbrk_call - sizeof(memory_block_t);
     free_head->next = NULL; // next is pointing to NULL
     return 0;
 }
@@ -255,8 +211,8 @@ void *umalloc(size_t size) {
     memory_block_t *fitted_block = find(size);
     if (fitted_block->next == NULL){ // didn't find a block with enough space
         memory_block_t *last_node = fitted_block;
-        intptr_t new_size = size * 5; // if call size is too big
-        if (new_size >= PAGESIZE * 16)
+        intptr_t new_size = size * 5;
+        if (new_size >= PAGESIZE * 16) // if call size is too big
             new_size = PAGESIZE * 16;
         memory_block_t *more_space = csbrk(new_size);
         more_space->block_size_alloc = new_size - sizeof(memory_block_t);
