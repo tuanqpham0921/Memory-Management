@@ -5,7 +5,7 @@
 #include <assert.h>
 
 const char author[] = ANSI_BOLD ANSI_COLOR_RED "Tuan Pham, tqp85" ANSI_RESET;
-intptr_t csbrk_call = (PAGESIZE);
+intptr_t csbrk_call = (PAGESIZE * 16);
 /*
  * The following helpers can be used to interact with the memory_block_t
  * struct, they can be adjusted as necessary.
@@ -248,46 +248,24 @@ int uinit() {
  * umalloc -  allocates size bytes and returns a pointer to the allocated memory.
  */
 void *umalloc(size_t size) {
-    // printf("\n          ALLOCATING: %ld\n", size);
-    // print_heap();
     int mod = size % ALIGNMENT;
-    // size_t first_size = size;
-    if (mod != 0){
-        size += ALIGNMENT - mod;
-    }
+    if (mod != 0)
+        size += ALIGNMENT - mod; 
     size += sizeof(memory_block_t); // size we're finding must be % 16
     memory_block_t *fitted_block = find(size);
     if (fitted_block->next == NULL){ // didn't find a block with enough space
         memory_block_t *last_node = fitted_block;
-        // size_t last_node_end = (size_t) last_node + sizeof(memory_block_t) + last_node->block_size_alloc;
-        // memory_block_t *more_space = csbrk(csbrk_call);
-        //    //more_space->next = NULL;
-        // //add_to_heap(more_space);
-        // size_t csbrk_gap = (uintptr_t) more_space - last_node_end;
-        // last_node->block_size_alloc = last_node->block_size_alloc + csbrk_gap + csbrk_call;
-            // connect to trailer next
-        //coalesce(last_node, more_space, last_node_end, (size_t) more_space);
-        // size_t total_new_space = last_node->block_size_alloc;
-        // fitted_block = split(last_node, size); // not csbrk
-        // memory_block_t *left_over = split_new(fitted_block, last_node, total_new_space);
-        intptr_t new_size = size * 2;
-        if (new_size >= PAGESIZE * 16){
+        intptr_t new_size = size * 5; // if call size is too big
+        if (new_size >= PAGESIZE * 16)
             new_size = PAGESIZE * 16;
-        }
         memory_block_t *more_space = csbrk(new_size);
         more_space->block_size_alloc = new_size - sizeof(memory_block_t);
         more_space->next = NULL; 
         fitted_block = split(more_space, size);
-        memory_block_t *left_over = split_new(fitted_block, more_space, new_size - sizeof(memory_block_t), NULL);
+        memory_block_t *left_over = split_new(fitted_block, more_space, 
+                                new_size - sizeof(memory_block_t), NULL);
         last_node->next = left_over;
-        // umalloc(first_size);
-        // printf("after recursion umalloc\n");
     }
-    // printf("***%s at %p, size %d, end address %p\n",
-    //             (is_allocated(fitted_block))?"alllocated":"free",
-    //             fitted_block,
-    //             (int) get_size(fitted_block), fitted_block->next);  
-    // print_heap();
     return fitted_block + 1;
 }
 
@@ -297,14 +275,7 @@ void *umalloc(size_t size) {
  */
 void ufree(void *ptr) {
     // go back to the header
-    // **** do you have to NULL out to prevent memory leaks???
-    // printf("______________________________________________________________\n");
-    // printf("\n          FREEING:%p\n", ((memory_block_t *) ptr) - 1);
-    // print_heap();
     memory_block_t *cur_node = ((memory_block_t *) ptr) - 1;
     deallocate(cur_node);
-    add_to_heap(cur_node);
-    // printf("\n");
-    // print_heap();
-    // printf("______________________________________________________________\n");
+    add_to_heap(cur_node);;
 }
