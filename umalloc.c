@@ -5,7 +5,7 @@
 #include <assert.h>
 
 const char author[] = ANSI_BOLD ANSI_COLOR_RED "Tuan Pham, tqp85" ANSI_RESET;
-intptr_t csbrk_call = (PAGESIZE * 12.5);
+intptr_t csbrk_call = (PAGESIZE);
 /*
  * The following helpers can be used to interact with the memory_block_t
  * struct, they can be adjusted as necessary.
@@ -105,8 +105,9 @@ memory_block_t *find(size_t size) {
     while (cur_node != NULL){
         if (cur_node->block_size_alloc >= size){
             size_t old_size = cur_node->block_size_alloc;
+            memory_block_t *cur_node_next = cur_node->next;
             memory_block_t *ret = split(cur_node, size);
-            memory_block_t *new_node = split_new(ret, cur_node, old_size);
+            memory_block_t *new_node = split_new(ret, cur_node, old_size, cur_node_next);
             // ****work on case for perfect fit cases
             if(prev_node != NULL){
                 prev_node->next = new_node;
@@ -150,11 +151,13 @@ memory_block_t *split(memory_block_t *block, size_t size) {
 /*
  * split - return the left over portion back
  */
-memory_block_t *split_new(memory_block_t *taken, memory_block_t *space, size_t old_size) {
+memory_block_t *split_new(memory_block_t *taken, memory_block_t *space, size_t old_size, 
+                                                                    memory_block_t *old_next) {
     int padding = (uintptr_t) taken - (uintptr_t) space;
     memory_block_t *ret = (memory_block_t *) ((char *) space + padding + 
                 sizeof(memory_block_t) + get_size(taken));
     ret->block_size_alloc = old_size - get_size(taken) - sizeof(memory_block_t) - padding;
+    ret->next = old_next;
     return ret;
 }
 
@@ -220,10 +223,10 @@ void add_to_heap(memory_block_t *block){
 void print_heap() {
     memory_block_t *cur_node = free_head;
     while(cur_node != NULL){
-        printf("%s at %p, size %d\n",
+        printf("%s at %p, size %d, next address %p\n",
                 (is_allocated(cur_node))?"alllocated":"free",
                 cur_node,
-                (int) (cur_node->block_size_alloc));
+                (int) (cur_node->block_size_alloc), cur_node->next);
         cur_node = cur_node->next;       
     }
 }
@@ -245,7 +248,10 @@ int uinit() {
  * umalloc -  allocates size bytes and returns a pointer to the allocated memory.
  */
 void *umalloc(size_t size) {
+    // printf("\n          ALLOCATING: %ld\n", size);
+    // print_heap();
     int mod = size % ALIGNMENT;
+    // size_t first_size = size;
     if (mod != 0){
         size += ALIGNMENT - mod;
     }
@@ -253,19 +259,35 @@ void *umalloc(size_t size) {
     memory_block_t *fitted_block = find(size);
     if (fitted_block->next == NULL){ // didn't find a block with enough space
         memory_block_t *last_node = fitted_block;
-        size_t last_node_end = (size_t) last_node + sizeof(memory_block_t) + last_node->block_size_alloc;
-        memory_block_t *more_space = csbrk(csbrk_call);
-        more_space->block_size_alloc = csbrk_call - sizeof(memory_block_t);
+        // size_t last_node_end = (size_t) last_node + sizeof(memory_block_t) + last_node->block_size_alloc;
+        // memory_block_t *more_space = csbrk(csbrk_call);
+        //    //more_space->next = NULL;
+        // //add_to_heap(more_space);
+        // size_t csbrk_gap = (uintptr_t) more_space - last_node_end;
+        // last_node->block_size_alloc = last_node->block_size_alloc + csbrk_gap + csbrk_call;
+            // connect to trailer next
+        //coalesce(last_node, more_space, last_node_end, (size_t) more_space);
+        // size_t total_new_space = last_node->block_size_alloc;
+        // fitted_block = split(last_node, size); // not csbrk
+        // memory_block_t *left_over = split_new(fitted_block, last_node, total_new_space);
+        intptr_t new_size = size * 2;
+        if (new_size >= PAGESIZE * 16){
+            new_size = PAGESIZE * 16;
+        }
+        memory_block_t *more_space = csbrk(new_size);
+        more_space->block_size_alloc = new_size - sizeof(memory_block_t);
         more_space->next = NULL; 
         fitted_block = split(more_space, size);
-        memory_block_t *left_over = split_new(fitted_block, more_space, csbrk_call - sizeof(memory_block_t));
-        coalesce(last_node, left_over, last_node_end, (size_t) left_over);
-        left_over->next = NULL;
+        memory_block_t *left_over = split_new(fitted_block, more_space, new_size - sizeof(memory_block_t), NULL);
+        last_node->next = left_over;
+        // umalloc(first_size);
+        // printf("after recursion umalloc\n");
     }
     // printf("***%s at %p, size %d, end address %p\n",
     //             (is_allocated(fitted_block))?"alllocated":"free",
     //             fitted_block,
     //             (int) get_size(fitted_block), fitted_block->next);  
+    // print_heap();
     return fitted_block + 1;
 }
 
@@ -276,7 +298,13 @@ void *umalloc(size_t size) {
 void ufree(void *ptr) {
     // go back to the header
     // **** do you have to NULL out to prevent memory leaks???
-    // memory_block_t *cur_node = ((memory_block_t *) ptr) - 1;
-    // deallocate(cur_node);
-    // add_to_heap(cur_node);
+    // printf("______________________________________________________________\n");
+    // printf("\n          FREEING:%p\n", ((memory_block_t *) ptr) - 1);
+    // print_heap();
+    memory_block_t *cur_node = ((memory_block_t *) ptr) - 1;
+    deallocate(cur_node);
+    add_to_heap(cur_node);
+    // printf("\n");
+    // print_heap();
+    // printf("______________________________________________________________\n");
 }

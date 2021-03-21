@@ -28,7 +28,7 @@ void *get_payload(memory_block_t *block);
 memory_block_t *get_block(void *payload);
 // new
 void print_heap();
-memory_block_t *split_new(memory_block_t *new, memory_block_t *old, size_t old_size);
+memory_block_t *split_new(memory_block_t *new, memory_block_t *old, size_t old_size, memory_block_t *old_next);
 void add_to_heap(memory_block_t *block);
 void coalesce(memory_block_t *lead, memory_block_t *trailer, 
                     size_t lead_end, size_t trailer_begin);
